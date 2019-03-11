@@ -193,7 +193,7 @@ export abstract class AppUpdater extends EventEmitter {
     // https://github.com/electron-userland/electron-builder/issues/1105
     let provider: Provider<any>
     if (typeof options === "string") {
-      provider = new GenericProvider({provider: "generic", url: options}, this, {
+      provider = new GenericProvider({ provider: "generic", url: options }, this, {
         ...runtimeOptions,
         isUseMultipleRangeRequest: isUrlProbablySupportMultiRangeRequests(options),
       })
@@ -246,7 +246,7 @@ export abstract class AppUpdater extends EventEmitter {
       return Promise.resolve(null)
     }
 
-    return this.checkForUpdates()
+    const checkAndNotifyPromise = this.checkForUpdates()
       .then(it => {
         const downloadPromise = it.downloadPromise
         if (downloadPromise == null) {
@@ -264,9 +264,12 @@ export abstract class AppUpdater extends EventEmitter {
               body: `${this.app.name} version ${it.updateInfo.version} has been downloaded and will be automatically installed on exit`
             }).show()
           })
-
         return it
       })
+    checkAndNotifyPromise.catch(e => {
+      this._logger.error("suppress checking update error")
+    })
+    return checkAndNotifyPromise
   }
 
   private async isStagingMatch(updateInfo: UpdateInfo): Promise<boolean> {
@@ -341,7 +344,7 @@ export abstract class AppUpdater extends EventEmitter {
 
     const client = await this.clientPromise
     const stagingUserId = await this.stagingUserIdPromise.value
-    client.setRequestHeaders(this.computeFinalHeaders({"x-user-staging-id": stagingUserId}))
+    client.setRequestHeaders(this.computeFinalHeaders({ "x-user-staging-id": stagingUserId }))
     return {
       info: await client.getLatestVersion(),
       provider: client,
@@ -468,7 +471,7 @@ export abstract class AppUpdater extends EventEmitter {
         ...requestHeaders,
       }
     }
-    return this.computeFinalHeaders({accept: "*/*"})
+    return this.computeFinalHeaders({ accept: "*/*" })
   }
 
   private async getOrCreateStagingUserId(): Promise<string> {
